@@ -574,28 +574,36 @@ button:focus-visible {
   }
 
   .cube-ui__top-left {
+    position: relative;
     gap: 10px;
     width: 100%;
+    min-height: 80px;
   }
 
   .cube-size-dock {
-    position: static;
+    position: absolute;
+    top: 0;
+    left: auto;
+    right: 12px;
     transform: none;
-    width: 292px;
-    max-width: 100%;
-    margin: 0 auto;
+    width: clamp(160px, 46vw, 180px);
+    max-width: none;
+    margin: 0;
     padding: 9px 10px 10px;
   }
 
   .cube-ui__top {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: start;
-    gap: 10px;
+    position: relative;
+    display: block;
+    min-height: 164px;
   }
 
   .cube-hud {
-    align-self: start;
+    position: absolute;
+    top: 100px;
+    left: 0;
+    right: 0;
+    width: 100%;
     justify-content: space-between;
     gap: 12px;
     padding: 9px 11px;
@@ -605,59 +613,9 @@ button:focus-visible {
     display: none;
   }
   .cube-hud__status { display: none; }
+  .session-subtitle { display: none; }
+  .session-heading { flex-shrink: 0; }
+  .session-actions { flex-wrap: nowrap; }
   .cube-controls__row-label { font-size: 9px; }
   .action-btn { min-height: 40px; padding: 10px 6px; font-size: 11px; }
-}
-
-@media (max-width: 390px) {
-  .cube-ui {
-    padding: 10px;
-  }
-
-  .cube-ui__brand-sub {
-    font-size: 10px;
-  }
-
-  .cube-size-dock {
-    width: 292px;
-    max-width: 100%;
-    min-width: 0;
-  }
-
-  .cube-hud {
-    width: 100%;
-    grid-column: 1 / -1;
-  }
-
-  .cube-controls {
-    padding: 13px 12px 12px;
-    width: 100%;
-  }
-
-  .session-actions {
-    gap: 5px;
-  }
-
-  .session-heading {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 2px;
-  }
-  .action-row {
-    gap: 5px;
-  }
-
-  .action-btn {
-    min-width: 0;
-    padding-inline: 4px;
-    font-size: 10px;
-  }
-
-  .cube-controls__toolbar {
-    gap: 8px;
-  }
-
-  .session-actions {
-    flex-shrink: 0;
-  }
 }

@@ -78,6 +78,7 @@ export class CubeRenderer {
     this.dragStart = null;
     this.draggedCubie = null;
     this.draggedFace = null;
+    this.draggedPoint = null;
     this.isDraggingCube = false;
     this.idleMotion = true;
     this.autoRotationEnabled = true;
@@ -280,12 +281,13 @@ export class CubeRenderer {
     this.draggedCubie = intersection.object;
 
     this.draggedFace = intersection.face;
+    this.draggedPoint = intersection.point.clone();
 
     this.cameraControls.disable();
 
-    this.renderer.domElement.setPointerCapture(
-      event.pointerId
-    );
+    try {
+      this.renderer.domElement.setPointerCapture(event.pointerId);
+    } catch {}
   }
 
   _intersectionAt(event) {
@@ -356,29 +358,18 @@ export class CubeRenderer {
       return;
     }
 
-    const swipeDirection =
-      Math.abs(dx) > Math.abs(dy)
-        ? dx > 0
-          ? 1
-          : -1
-        : dy > 0
-          ? 1
-          : -1;
-
     const faceNormal = this.draggedFace?.normal;
-    const abs = faceNormal
-      ? [Math.abs(faceNormal.x), Math.abs(faceNormal.y), Math.abs(faceNormal.z)]
-      : [1, 0, 0];
-    const axis = abs[0] >= abs[1] && abs[0] >= abs[2]
-      ? 'x'
-      : abs[1] >= abs[2]
-        ? 'y'
-        : 'z';
+    const faceAxis = faceNormal
+      ? this._axisFromVector(faceNormal)
+      : null;
+    const axis = this._axisForSwipe(cubie, faceAxis, dx, dy);
+
+    const dir = this._rotationDirectionFromSwipe(axis, dx, dy);
 
     const move = {
       axis,
       layerValue: cubie.position[axis],
-      dir: -swipeDirection,
+      dir,
     };
 
     this.cube.applyMove(move);
@@ -386,11 +377,84 @@ export class CubeRenderer {
     this.animateMove(move);
   }
 
+  _axisFromVector(vector) {
+    const abs = [Math.abs(vector.x), Math.abs(vector.y), Math.abs(vector.z)];
+
+    return abs[0] >= abs[1] && abs[0] >= abs[2]
+      ? 'x'
+      : abs[1] >= abs[2]
+        ? 'y'
+        : 'z';
+  }
+
+  _axisForSwipe(cubie, faceAxis, dx, dy) {
+    const max = (this.cube.size - 1) / 2;
+    const surfaceAxes = ['x', 'y', 'z'].filter((axis) => (
+      Math.abs(cubie.position[axis]) === max
+    ));
+    const sideAxes = surfaceAxes.filter((axis) => axis !== faceAxis);
+    const candidates = sideAxes.length > 0 ? sideAxes : surfaceAxes;
+
+    return candidates.reduce((bestAxis, axis) => {
+      const bestAlignment = Math.abs(this._screenTangent(axis).x * dx + this._screenTangent(axis).y * dy);
+      const currentAlignment = Math.abs(this._screenTangent(bestAxis).x * dx + this._screenTangent(bestAxis).y * dy);
+      return bestAlignment > currentAlignment ? axis : bestAxis;
+    }, candidates[0] ?? faceAxis ?? 'z');
+  }
+
+  _rotationDirectionFromSwipe(axis, dx, dy) {
+    const axisVector = new THREE.Vector3(
+      axis === 'x' ? 1 : 0,
+      axis === 'y' ? 1 : 0,
+      axis === 'z' ? 1 : 0
+    );
+    const point = this.draggedPoint.clone();
+    const center = this.cubeGroup.localToWorld(new THREE.Vector3());
+    const worldAxis = this.cubeGroup.localToWorld(axisVector).sub(center).normalize();
+    const tangent = new THREE.Vector3().crossVectors(worldAxis, point.sub(center));
+
+    if (tangent.lengthSq() === 0) {
+      return Math.abs(dx) > Math.abs(dy)
+        ? dx > 0 ? 1 : -1
+        : dy > 0 ? 1 : -1;
+    }
+
+    const screenTangent = this._screenTangent(axis);
+    const dot = dx * screenTangent.x + dy * screenTangent.y;
+
+    return dot >= 0 ? 1 : -1;
+  }
+
+  _screenTangent(axis) {
+    const axisVector = new THREE.Vector3(
+      axis === 'x' ? 1 : 0,
+      axis === 'y' ? 1 : 0,
+      axis === 'z' ? 1 : 0
+    );
+    const point = this.draggedPoint.clone();
+    const center = this.cubeGroup.localToWorld(new THREE.Vector3());
+    const worldAxis = this.cubeGroup.localToWorld(axisVector).sub(center).normalize();
+    const tangent = new THREE.Vector3().crossVectors(worldAxis, point.sub(center));
+
+    if (tangent.lengthSq() === 0) {
+      return { x: 0, y: 0 };
+    }
+
+    const projectedPoint = this.draggedPoint.clone().project(this.camera);
+    const projectedTangent = this.draggedPoint.clone().add(tangent.normalize().multiplyScalar(0.25)).project(this.camera);
+
+    return {
+      x: projectedTangent.x - projectedPoint.x,
+      y: -(projectedTangent.y - projectedPoint.y),
+    };
+  }
+
   _cancelDrag() {
     this.dragStart = null;
     this.isDraggingCube = false;
     this.draggedCubie = null;
     this.draggedFace = null;
+    this.draggedPoint = null;
 
     this.cameraControls.enable();
   }
