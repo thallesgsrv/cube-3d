@@ -1,15 +1,15 @@
 :root {
   --bg-0: #05060a;
   --bg-1: #0a0c14;
-  --panel: rgba(15, 19, 29, 0.72);
-  --panel-border: rgba(255, 255, 255, 0.09);
-  --text: #eef0f8;
-  --text-dim: #9297ad;
-  --accent: #b7f34a;
-  --accent-2: #5ed7c2;
+  --panel: rgba(18, 22, 27, 0.94);
+  --panel-border: rgba(255, 255, 255, 0.14);
+  --text: #f1f0eb;
+  --text-dim: #a2a5a5;
+  --accent: #c7e36b;
+  --accent-2: #b6c989;
   --danger: #ff6b81;
   --success: #4ade80;
-  --radius: 16px;
+  --radius: 9px;
   --font-ui: 'Sora', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 }
@@ -29,7 +29,7 @@ body {
   overflow: hidden;
   font-family: var(--font-ui);
   color: var(--text);
-  background: radial-gradient(circle at 50% 48%, #182235 0%, #0b101c 38%, #05060a 78%);
+  background: radial-gradient(circle at 52% 42%, #202a30 0%, #11181d 38%, #080a0d 78%);
 }
 
 body::before {
@@ -37,7 +37,7 @@ body::before {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  opacity: 0.22;
+  opacity: 0.12;
   background-image: linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
   background-size: 72px 72px;
   mask-image: linear-gradient(to bottom, black, transparent 80%);
@@ -108,10 +108,7 @@ button:focus-visible {
   font-weight: 800;
   font-size: 20px;
   letter-spacing: -0.02em;
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--text);
 }
 
 .cube-ui__brand-mark {
@@ -119,7 +116,7 @@ button:focus-visible {
   place-items: center;
   width: 34px;
   height: 34px;
-  border: 1px solid rgba(183, 243, 74, 0.55);
+  border: 1px solid rgba(199, 227, 107, 0.7);
   border-radius: 50%;
   color: var(--accent);
   font: 700 11px var(--font-mono);
@@ -135,10 +132,11 @@ button:focus-visible {
 .glass-panel {
   background: var(--panel);
   border: 1px solid var(--panel-border);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.055), 0 12px 28px rgba(0, 0, 0, 0.28);
   border-radius: var(--radius);
-  backdrop-filter: blur(18px) saturate(140%);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.055), 0 12px 28px rgba(0, 0, 0, 0.28);
 }
 
 /* ---------- HUD (timer + contador) ---------- */
@@ -150,7 +148,7 @@ button:focus-visible {
   align-items: center;
   flex-shrink: 0;
   border-color: rgba(255, 255, 255, 0.13);
-  box-shadow: 0 14px 42px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
 }
 
 .cube-hud__status {
@@ -217,7 +215,7 @@ button:focus-visible {
   padding: 11px 12px 12px;
   flex-shrink: 0;
   border-color: rgba(255, 255, 255, 0.13);
-  box-shadow: 0 14px 42px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(183, 243, 74, 0.04);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.055), 0 12px 28px rgba(0, 0, 0, 0.3);
 }
 
 .cube-size-dock__label {
@@ -241,7 +239,7 @@ button:focus-visible {
   width: min(414px, 100%);
   align-self: auto;
   border-color: rgba(255, 255, 255, 0.14);
-  box-shadow: 0 18px 55px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.055), 0 16px 32px rgba(0, 0, 0, 0.34);
 }
 
 .cube-controls::before {
@@ -251,7 +249,8 @@ button:focus-visible {
   left: 22px;
   right: 22px;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(183, 243, 74, 0.7), transparent);
+  background: var(--accent);
+  opacity: 0.7;
 }
 
 .cube-controls__row {
@@ -319,9 +318,9 @@ button:focus-visible {
   gap: 7px;
   padding: 8px 13px;
   border: 1px solid rgba(183, 243, 74, 0.35);
-  border-radius: 999px;
+  border-radius: 6px;
   color: var(--accent);
-  background: rgba(183, 243, 74, 0.1);
+  background: rgba(199, 227, 107, 0.12);
   font: 700 10px var(--font-ui);
   cursor: pointer;
   transition: transform 0.16s ease, background 0.16s ease, opacity 0.16s ease;
@@ -329,7 +328,7 @@ button:focus-visible {
 }
 
 .start-btn:hover {
-  background: rgba(183, 243, 74, 0.18);
+  background: rgba(199, 227, 107, 0.2);
   transform: translateY(-1px);
 }
 
@@ -355,9 +354,9 @@ button:focus-visible {
   gap: 7px;
   padding: 7px 10px;
   border: 1px solid var(--panel-border);
-  border-radius: 999px;
+  border-radius: 6px;
   color: var(--text-dim);
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.055);
   font: 600 10px var(--font-ui);
   cursor: pointer;
   transition: transform 0.16s ease, border-color 0.16s ease, color 0.16s ease;
@@ -394,7 +393,7 @@ button:focus-visible {
   width: auto;
   min-width: 0;
   height: 38px;
-  border-radius: 9px;
+  border-radius: 6px;
   border: 1px solid var(--panel-border);
   background: rgba(255, 255, 255, 0.04);
   color: var(--text);
@@ -413,10 +412,10 @@ button:focus-visible {
 }
 
 .size-btn.is-active {
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  background: var(--accent);
   color: #05060a;
   border-color: transparent;
-  box-shadow: 0 4px 16px rgba(110, 231, 255, 0.35);
+  box-shadow: none;
 }
 
 .size-btn:active:not(:disabled) {
@@ -466,9 +465,10 @@ button:focus-visible {
 }
 
 .action-btn--primary {
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  background: var(--accent);
   color: #05060a;
   border-color: transparent;
+  box-shadow: 0 5px 16px rgba(199, 227, 107, 0.16);
 }
 
 .action-btn span { font-size: 17px; line-height: 0; }
@@ -523,10 +523,7 @@ button:focus-visible {
 .solved-toast__title {
   font-size: 22px;
   font-weight: 800;
-  background: linear-gradient(135deg, var(--success), var(--accent));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--success);
   margin-bottom: 6px;
 }
 
