@@ -85,6 +85,7 @@ export class CubeRenderer {
     this.motionTime = 0;
     this.moveEffect = 0;
     this.isAnimatingMove = false;
+    this.moveQueue = [];
 
     this._setupLights();
     this._createCube();
@@ -362,7 +363,7 @@ export class CubeRenderer {
     const faceAxis = faceNormal
       ? this._axisFromVector(faceNormal)
       : null;
-    const axis = this._axisForSwipe(cubie, faceAxis, dx, dy);
+    const axis = this._axisForSwipe(faceAxis, dx, dy);
 
     const dir = this._rotationDirectionFromSwipe(axis, dx, dy);
 
@@ -372,9 +373,7 @@ export class CubeRenderer {
       dir,
     };
 
-    this.cube.applyMove(move);
-
-    this.animateMove(move);
+    this.requestMove(move);
   }
 
   _axisFromVector(vector) {
@@ -387,13 +386,8 @@ export class CubeRenderer {
         : 'z';
   }
 
-  _axisForSwipe(cubie, faceAxis, dx, dy) {
-    const max = (this.cube.size - 1) / 2;
-    const surfaceAxes = ['x', 'y', 'z'].filter((axis) => (
-      Math.abs(cubie.position[axis]) === max
-    ));
-    const sideAxes = surfaceAxes.filter((axis) => axis !== faceAxis);
-    const candidates = sideAxes.length > 0 ? sideAxes : surfaceAxes;
+  _axisForSwipe(faceAxis, dx, dy) {
+    const candidates = ['x', 'y', 'z'].filter((axis) => axis !== faceAxis);
 
     return candidates.reduce((bestAxis, axis) => {
       const bestAlignment = Math.abs(this._screenTangent(axis).x * dx + this._screenTangent(axis).y * dy);
@@ -615,13 +609,32 @@ export class CubeRenderer {
       this._updateCube();
       this._triggerMoveEffect();
       this.isAnimatingMove = false;
-      this.idleMotion = true;
       this.onMove?.();
       this.onInteraction?.();
       if (this.cube.isSolved()) this.onSolved?.();
+      this._processMoveQueue();
     };
 
     requestAnimationFrame(step);
+  }
+
+  requestMove(move, record = true) {
+    this.moveQueue.push({ move: { ...move }, record });
+    this._processMoveQueue();
+  }
+
+  _processMoveQueue() {
+    if (this.isAnimatingMove || this.moveQueue.length === 0) {
+      if (!this.isAnimatingMove && this.moveQueue.length === 0) {
+        this.idleMotion = this.autoRotationEnabled;
+      }
+      return;
+    }
+
+    const queuedMove = this.moveQueue.shift();
+    const move = queuedMove.move;
+    this.cube.applyMove(move, queuedMove.record);
+    this.animateMove(move);
   }
 
   _triggerMoveEffect() {

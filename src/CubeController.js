@@ -73,9 +73,7 @@ export class CubeController {
       move.turns = 2;
     }
 
-    this.cube.applyMove(move);
-
-    this.renderer.animateMove(move);
+    this.renderer.requestMove(move);
 
     console.log(
       `${key}${event.shiftKey ? "'" : ""}${

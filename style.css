@@ -566,7 +566,10 @@ button:focus-visible {
   }
 
   .cube-ui__brand-title {
-    font-size: 17px;
+    overflow: hidden;
+    font-size: 13px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .cube-ui__brand-sub {
@@ -580,13 +583,25 @@ button:focus-visible {
     min-height: 80px;
   }
 
+  .cube-ui__brand {
+    width: calc(100% - clamp(150px, 46vw, 180px) - 12px);
+    min-width: 0;
+    gap: 7px;
+  }
+
+  .cube-ui__brand-mark {
+    width: 30px;
+    height: 30px;
+    flex: 0 0 30px;
+  }
+
   .cube-size-dock {
     position: absolute;
     top: 0;
     left: auto;
     right: 12px;
     transform: none;
-    width: clamp(160px, 46vw, 180px);
+    width: clamp(150px, 46vw, 180px);
     max-width: none;
     margin: 0;
     padding: 9px 10px 10px;
