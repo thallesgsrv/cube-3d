@@ -206,6 +206,22 @@ export class CubeRenderer {
     canvas.addEventListener(
       'pointerdown',
       (event) => {
+        if (event.pointerType !== 'touch' || this.isAnimatingMove) {
+          return;
+        }
+
+        const intersection = this._intersectionAt(event);
+
+        if (intersection) {
+          this.cameraControls.disable();
+        }
+      },
+      { capture: true }
+    );
+
+    canvas.addEventListener(
+      'pointerdown',
+      (event) => {
         this._onPointerDown(event);
       }
     );
@@ -246,31 +262,14 @@ export class CubeRenderer {
 
     this.idleMotion = false;
 
-    const rect =
-      this.renderer.domElement.getBoundingClientRect();
-
-    this.pointer.x =
-      ((event.clientX - rect.left) / rect.width) * 2 - 1;
-
-    this.pointer.y =
-      -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-    this.raycaster.setFromCamera(
-      this.pointer,
-      this.camera
-    );
-
-    const intersections =
-      this.raycaster.intersectObjects(
-        this.cubeGroup.children
-      );
+    const intersection = this._intersectionAt(event);
 
     this.dragStart = {
       x: event.clientX,
       y: event.clientY,
     };
 
-    if (intersections.length === 0) {
+    if (!intersection) {
       this.isDraggingCube = false;
       this.cameraControls.enable();
       return;
@@ -278,17 +277,29 @@ export class CubeRenderer {
 
     this.isDraggingCube = true;
 
-    this.draggedCubie =
-      intersections[0].object;
+    this.draggedCubie = intersection.object;
 
-    this.draggedFace =
-      intersections[0].face;
+    this.draggedFace = intersection.face;
 
     this.cameraControls.disable();
 
     this.renderer.domElement.setPointerCapture(
       event.pointerId
     );
+  }
+
+  _intersectionAt(event) {
+    const rect = this.renderer.domElement.getBoundingClientRect();
+
+    this.pointer.x =
+      ((event.clientX - rect.left) / rect.width) * 2 - 1;
+
+    this.pointer.y =
+      -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+    this.raycaster.setFromCamera(this.pointer, this.camera);
+
+    return this.raycaster.intersectObjects(this.cubeGroup.children)[0] ?? null;
   }
 
   _onPointerMove(event) {
@@ -345,7 +356,7 @@ export class CubeRenderer {
       return;
     }
 
-    const dir =
+    const swipeDirection =
       Math.abs(dx) > Math.abs(dy)
         ? dx > 0
           ? 1
@@ -367,7 +378,7 @@ export class CubeRenderer {
     const move = {
       axis,
       layerValue: cubie.position[axis],
-      dir,
+      dir: -swipeDirection,
     };
 
     this.cube.applyMove(move);
@@ -555,7 +566,13 @@ export class CubeRenderer {
 
   _cameraDistance(width = this.container.clientWidth) {
     const sizeFactor = this.cube.size === 3 ? 1 : this.cube.size === 4 ? 1.28 : 1.52;
-    const mobileFactor = width <= 560 ? 1.9 : 1;
+    const mobileFactor = width <= 560
+      ? this.cube.size === 3
+        ? 1.9
+        : this.cube.size === 4
+          ? 2.3
+          : 2.75
+      : 1;
     return 6 * sizeFactor * mobileFactor;
   }
 

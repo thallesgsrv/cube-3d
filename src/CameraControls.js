@@ -11,7 +11,7 @@ export class CameraControls {
     this.controls.dampingFactor = 0.08;
 
     this.controls.minDistance = 4;
-    this.controls.maxDistance = 12;
+    this.controls.maxDistance = 24;
 
     this.controls.enablePan = false;
 

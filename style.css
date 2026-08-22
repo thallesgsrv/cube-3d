@@ -21,11 +21,12 @@
 html,
 body {
   width: 100%;
-  height: 100%;
+  min-height: 100%;
   margin: 0;
 }
 
 body {
+  min-height: 100dvh;
   overflow: hidden;
   font-family: var(--font-ui);
   color: var(--text);
@@ -46,7 +47,8 @@ body::before {
 #app {
   position: relative;
   width: 100%;
-  height: 100%;
+  height: 100dvh;
+  min-height: 100%;
 }
 
 #app canvas {
@@ -537,7 +539,9 @@ button:focus-visible {
 
 @media (max-width: 560px) {
   .cube-ui {
-    padding: max(14px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
+    padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+    justify-content: flex-start;
+    gap: 0;
   }
 
   .cube-hud {
@@ -552,6 +556,9 @@ button:focus-visible {
   .cube-controls {
     position: static;
     width: 100%;
+    margin-top: auto;
+    gap: 9px;
+    padding: 11px 10px 10px;
   }
 
   .cube-controls__hint {
@@ -560,6 +567,10 @@ button:focus-visible {
 
   .cube-ui__brand-title {
     font-size: 17px;
+  }
+
+  .cube-ui__brand-sub {
+    display: none;
   }
 
   .cube-ui__top-left {
@@ -577,26 +588,23 @@ button:focus-visible {
   }
 
   .cube-ui__top {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
     gap: 10px;
   }
 
   .cube-hud {
-    align-self: flex-start;
+    align-self: start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 9px 11px;
   }
 
   .cube-ui__center {
-    display: block;
-    position: absolute;
-    left: 14px;
-    right: 14px;
-    bottom: 145px;
-    margin: 0;
-    padding: 0;
+    display: none;
   }
-  .cube-ui__center h1 { margin: 8px 0 7px; font-size: 32px; max-width: 250px; }
-  .cube-ui__center p { max-width: 210px; line-height: 1.5; }
   .cube-hud__status { display: none; }
-  .cube-controls { padding: 13px 12px 12px; gap: 10px; }
   .cube-controls__row-label { font-size: 9px; }
   .action-btn { min-height: 40px; padding: 10px 6px; font-size: 11px; }
 }
@@ -618,7 +626,7 @@ button:focus-visible {
 
   .cube-hud {
     width: 100%;
-    justify-content: space-between;
+    grid-column: 1 / -1;
   }
 
   .cube-controls {
@@ -645,6 +653,11 @@ button:focus-visible {
     font-size: 10px;
   }
 
-  .cube-ui__center { bottom: 145px; }
-  .cube-ui__center h1 { font-size: 29px; }
+  .cube-controls__toolbar {
+    gap: 8px;
+  }
+
+  .session-actions {
+    flex-shrink: 0;
+  }
 }
