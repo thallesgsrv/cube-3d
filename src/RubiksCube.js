@@ -16,7 +16,6 @@ export class RubiksCube {
     }
 
     this.size = size;
-
     this.moveHistory = [];
     this.redoStack = [];
 
@@ -27,7 +26,6 @@ export class RubiksCube {
     this.cubies = [];
 
     const offset = (this.size - 1) / 2;
-
     let id = 0;
 
     for (let x = 0; x < this.size; x++) {
@@ -41,14 +39,29 @@ export class RubiksCube {
 
           const stickers = {};
 
-          if (x === this.size - 1) stickers.x = COLORS.R;
-          if (x === 0) stickers.x = COLORS.L;
+          if (x === this.size - 1) {
+            stickers.right = COLORS.R;
+          }
 
-          if (y === this.size - 1) stickers.y = COLORS.U;
-          if (y === 0) stickers.y = COLORS.D;
+          if (x === 0) {
+            stickers.left = COLORS.L;
+          }
 
-          if (z === this.size - 1) stickers.z = COLORS.F;
-          if (z === 0) stickers.z = COLORS.B;
+          if (y === this.size - 1) {
+            stickers.up = COLORS.U;
+          }
+
+          if (y === 0) {
+            stickers.down = COLORS.D;
+          }
+
+          if (z === this.size - 1) {
+            stickers.front = COLORS.F;
+          }
+
+          if (z === 0) {
+            stickers.back = COLORS.B;
+          }
 
           this.cubies.push({
             id: id++,
@@ -67,62 +80,80 @@ export class RubiksCube {
     this.redoStack = [];
   }
 
+  setSize(size) {
+    if (!Number.isInteger(size) || size < 2) {
+      throw new Error('Cube size must be an integer >= 2');
+    }
+
+    this.size = size;
+    this.reset();
+  }
+
   getCubies() {
     return this.cubies.map((cubie) => ({
       id: cubie.id,
-      position: { ...cubie.position },
-      stickers: { ...cubie.stickers },
+
+      position: {
+        ...cubie.position,
+      },
+
+      stickers: {
+        ...cubie.stickers,
+      },
     }));
   }
 
   isSolved() {
-    const offset = (this.size - 1) / 2;
-
-    for (const cubie of this.cubies) {
-      const { x, y, z } = cubie.position;
-
-      if (
-        Math.round(x) !== x ||
-        Math.round(y) !== y ||
-        Math.round(z) !== z
-      ) {
-        return false;
-      }
-
-      if (Math.abs(x) > offset || Math.abs(y) > offset || Math.abs(z) > offset) {
-        return false;
-      }
-    }
-
     return this._stickersAreSolved();
   }
 
   _stickersAreSolved() {
+    const max = this._maxCoordinate();
+    const min = this._minCoordinate();
+
     for (const cubie of this.cubies) {
       const { x, y, z } = cubie.position;
-      const stickers = cubie.stickers;
+      const { stickers } = cubie;
 
-      if (x === this._maxCoordinate() && stickers.x !== COLORS.R) {
+      if (
+        x === max &&
+        stickers.right !== COLORS.R
+      ) {
         return false;
       }
 
-      if (x === this._minCoordinate() && stickers.x !== COLORS.L) {
+      if (
+        x === min &&
+        stickers.left !== COLORS.L
+      ) {
         return false;
       }
 
-      if (y === this._maxCoordinate() && stickers.y !== COLORS.U) {
+      if (
+        y === max &&
+        stickers.up !== COLORS.U
+      ) {
         return false;
       }
 
-      if (y === this._minCoordinate() && stickers.y !== COLORS.D) {
+      if (
+        y === min &&
+        stickers.down !== COLORS.D
+      ) {
         return false;
       }
 
-      if (z === this._maxCoordinate() && stickers.z !== COLORS.F) {
+      if (
+        z === max &&
+        stickers.front !== COLORS.F
+      ) {
         return false;
       }
 
-      if (z === this._minCoordinate() && stickers.z !== COLORS.B) {
+      if (
+        z === min &&
+        stickers.back !== COLORS.B
+      ) {
         return false;
       }
     }
@@ -148,7 +179,11 @@ export class RubiksCube {
       turns: move.turns ?? 1,
     };
 
-    for (let i = 0; i < normalizedMove.turns; i++) {
+    for (
+      let i = 0;
+      i < normalizedMove.turns;
+      i++
+    ) {
       this.rotateLayer90(
         normalizedMove.axis,
         normalizedMove.layerValue,
@@ -166,21 +201,39 @@ export class RubiksCube {
   }
 
   rotateLayer90(axis, layerValue, dir = 1) {
-    const coordinate = this._coordinateForLayer(axis, layerValue);
+    const coordinate =
+      this._coordinateForLayer(
+        axis,
+        layerValue
+      );
 
     for (const cubie of this.cubies) {
-      if (Math.round(cubie.position[axis]) !== Math.round(coordinate)) {
+      if (
+        Math.round(cubie.position[axis]) !==
+        Math.round(coordinate)
+      ) {
         continue;
       }
 
-      this._rotatePosition(cubie, axis, dir);
-      this._rotateStickers(cubie, axis, dir);
+      this._rotatePosition(
+        cubie,
+        axis,
+        dir
+      );
+
+      this._rotateStickers(
+        cubie,
+        axis,
+        dir
+      );
     }
   }
 
   _coordinateForLayer(axis, layerValue) {
     if (!AXES.includes(axis)) {
-      throw new Error(`Invalid axis: ${axis}`);
+      throw new Error(
+        `Invalid axis: ${axis}`
+      );
     }
 
     return layerValue;
@@ -208,46 +261,153 @@ export class RubiksCube {
   }
 
   _rotateStickers(cubie, axis, dir) {
-    const old = { ...cubie.stickers };
+    const old = {
+      ...cubie.stickers,
+    };
+
     const next = {};
 
     if (axis === 'x') {
-      if (old.x) next.x = old.x;
+      if (old.right) {
+        next.right = old.right;
+      }
+
+      if (old.left) {
+        next.left = old.left;
+      }
 
       if (dir === 1) {
-        if (old.y) next.z = old.y;
-        if (old.z) next.y = old.z;
+        if (old.up) {
+          next.front = old.up;
+        }
+
+        if (old.front) {
+          next.down = old.front;
+        }
+
+        if (old.down) {
+          next.back = old.down;
+        }
+
+        if (old.back) {
+          next.up = old.back;
+        }
       } else {
-        if (old.y) next.z = old.z;
-        if (old.z) next.y = old.y;
+        if (old.up) {
+          next.back = old.up;
+        }
+
+        if (old.back) {
+          next.down = old.back;
+        }
+
+        if (old.down) {
+          next.front = old.down;
+        }
+
+        if (old.front) {
+          next.up = old.front;
+        }
       }
+
+      cubie.stickers = next;
+
+      return;
     }
 
     if (axis === 'y') {
-      if (old.y) next.y = old.y;
+      if (old.up) {
+        next.up = old.up;
+      }
+
+      if (old.down) {
+        next.down = old.down;
+      }
 
       if (dir === 1) {
-        if (old.x) next.z = old.x;
-        if (old.z) next.x = old.z;
+        if (old.front) {
+          next.right = old.front;
+        }
+
+        if (old.right) {
+          next.back = old.right;
+        }
+
+        if (old.back) {
+          next.left = old.back;
+        }
+
+        if (old.left) {
+          next.front = old.left;
+        }
       } else {
-        if (old.x) next.z = old.z;
-        if (old.z) next.x = old.x;
+        if (old.front) {
+          next.left = old.front;
+        }
+
+        if (old.left) {
+          next.back = old.left;
+        }
+
+        if (old.back) {
+          next.right = old.back;
+        }
+
+        if (old.right) {
+          next.front = old.right;
+        }
       }
+
+      cubie.stickers = next;
+
+      return;
     }
 
     if (axis === 'z') {
-      if (old.z) next.z = old.z;
+      if (old.front) {
+        next.front = old.front;
+      }
+
+      if (old.back) {
+        next.back = old.back;
+      }
 
       if (dir === 1) {
-        if (old.x) next.y = old.x;
-        if (old.y) next.x = old.y;
-      } else {
-        if (old.x) next.y = old.y;
-        if (old.y) next.x = old.x;
-      }
-    }
+        if (old.up) {
+          next.left = old.up;
+        }
 
-    cubie.stickers = next;
+        if (old.left) {
+          next.down = old.left;
+        }
+
+        if (old.down) {
+          next.right = old.down;
+        }
+
+        if (old.right) {
+          next.up = old.right;
+        }
+      } else {
+        if (old.up) {
+          next.right = old.up;
+        }
+
+        if (old.right) {
+          next.down = old.right;
+        }
+
+        if (old.down) {
+          next.left = old.down;
+        }
+
+        if (old.left) {
+          next.up = old.left;
+        }
+      }
+
+      cubie.stickers = next;
+    }
   }
 
   undo() {
@@ -262,7 +422,11 @@ export class RubiksCube {
       dir: -move.dir,
     };
 
-    for (let i = 0; i < move.turns; i++) {
+    for (
+      let i = 0;
+      i < move.turns;
+      i++
+    ) {
       this.rotateLayer90(
         inverse.axis,
         inverse.layerValue,
@@ -282,7 +446,11 @@ export class RubiksCube {
 
     const move = this.redoStack.pop();
 
-    for (let i = 0; i < move.turns; i++) {
+    for (
+      let i = 0;
+      i < move.turns;
+      i++
+    ) {
       this.rotateLayer90(
         move.axis,
         move.layerValue,
@@ -301,20 +469,30 @@ export class RubiksCube {
     }
 
     if (!AXES.includes(move.axis)) {
-      throw new Error(`Invalid axis: ${move.axis}`);
+      throw new Error(
+        `Invalid axis: ${move.axis}`
+      );
     }
 
     const min = this._minCoordinate();
     const max = this._maxCoordinate();
 
-    if (move.layerValue < min || move.layerValue > max) {
+    if (
+      move.layerValue < min ||
+      move.layerValue > max
+    ) {
       throw new Error(
         `Layer ${move.layerValue} is outside the cube`
       );
     }
 
-    if (move.turns !== undefined && ![1, 2, 3].includes(move.turns)) {
-      throw new Error('Turns must be 1, 2 or 3');
+    if (
+      move.turns !== undefined &&
+      ![1, 2, 3].includes(move.turns)
+    ) {
+      throw new Error(
+        'Turns must be 1, 2 or 3'
+      );
     }
   }
 }

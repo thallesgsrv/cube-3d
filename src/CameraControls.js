@@ -14,6 +14,16 @@ export class CameraControls {
     this.controls.maxDistance = 12;
 
     this.controls.enablePan = false;
+
+    this.controls.enabled = false;
+  }
+
+  enable() {
+    this.controls.enabled = true;
+  }
+
+  disable() {
+    this.controls.enabled = false;
   }
 
   update() {
