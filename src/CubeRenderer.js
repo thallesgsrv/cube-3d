@@ -555,7 +555,7 @@ export class CubeRenderer {
 
   _cameraDistance(width = this.container.clientWidth) {
     const sizeFactor = this.cube.size === 3 ? 1 : this.cube.size === 4 ? 1.28 : 1.52;
-    const mobileFactor = width <= 560 ? 1.5 : 1;
+    const mobileFactor = width <= 560 ? 1.9 : 1;
     return 6 * sizeFactor * mobileFactor;
   }
 
