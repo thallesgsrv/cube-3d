@@ -23,5 +23,8 @@
   "homepage": "https://github.com/thallesgsrv/cube-3d#readme",
   "dependencies": {
     "three": "^0.185.1"
+  },
+  "devDependencies": {
+    "vite": "^8.2.2"
   }
 }
