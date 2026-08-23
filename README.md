@@ -8,7 +8,7 @@ Aplicação web construída com JavaScript, [Three.js](https://threejs.org/) e [
 
 O projeto está configurado para publicação no GitHub Pages:
 
-**https://thallesgsrv.github.io/cube-3d/**
+**https://thallesgsrv.github.io/interactive-3d-Rubiks-Cube/**
 
 ## Requisitos
 
