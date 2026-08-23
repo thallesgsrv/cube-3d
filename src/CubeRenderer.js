@@ -208,14 +208,16 @@ export class CubeRenderer {
     canvas.addEventListener(
       'pointerdown',
       (event) => {
-        if (event.pointerType !== 'touch' || this.isAnimatingMove) {
+        if (this.isAnimatingMove) {
           return;
         }
 
-        const intersection = this._intersectionAt(event);
+        const usesFaceGesture = this._usesFaceGesture(event);
 
-        if (intersection) {
+        if (usesFaceGesture && this._intersectionAt(event)) {
           this.cameraControls.disable();
+        } else {
+          this.cameraControls.enable();
         }
       },
       { capture: true }
@@ -263,6 +265,13 @@ export class CubeRenderer {
     }
 
     this.idleMotion = false;
+
+    if (!this._usesFaceGesture(event)) {
+      this.dragStart = null;
+      this.isDraggingCube = false;
+      this.cameraControls.enable();
+      return;
+    }
 
     const intersection = this._intersectionAt(event);
 
@@ -529,6 +538,10 @@ export class CubeRenderer {
         cubie
       );
     }
+  }
+
+  _usesFaceGesture(event) {
+    return event.pointerType === 'touch' || event.shiftKey;
   }
 
   _updateCubieMaterials(mesh, cubie) {
