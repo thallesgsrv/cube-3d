@@ -1,3 +1,6 @@
+// Traduz teclas de face (R L U D F B) e seus modificadores (Shift,
+// Ctrl/Cmd) em movimentos e os envia direto para o renderizador, que
+// cuida de enfileirar e animar.
 export class CubeController {
   constructor(cube, renderer) {
     this.cube = cube;
@@ -17,6 +20,11 @@ export class CubeController {
     const maxLayer = (this.cube.size - 1) / 2;
     const minLayer = -maxLayer;
 
+    // Cada face corresponde à camada mais externa num eixo: R/L no eixo
+    // x, U/D no eixo y, F/B no eixo z. O par R/U/F usa a camada e a
+    // direção positivas; o par L/D/B usa a camada e a direção negativas
+    // — é essa simetria que faz o cubo girar "para dentro" de forma
+    // consistente com a notação padrão de cubo mágico.
     const moves = {
       R: {
         axis: 'x',
@@ -74,11 +82,5 @@ export class CubeController {
     }
 
     this.renderer.requestMove(move);
-
-    console.log(
-      `${key}${event.shiftKey ? "'" : ""}${
-        move.turns === 2 ? '2' : ''
-      }`
-    );
   }
 }
