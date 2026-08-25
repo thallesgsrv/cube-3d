@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { CameraControls } from './CameraControls.js';
 
+// Mesma paleta do RubiksCube.js, só que em hexadecimal para o Three.js.
+// INNER é a cor usada nas faces sem sticker (miolo do cubo).
 const COLORS = {
   U: 0xffffff,
   D: 0xffff00,
@@ -12,6 +14,8 @@ const COLORS = {
   INNER: 0x667080,
 };
 
+// Ponte entre o nome do sticker (string, vindo do RubiksCube) e a cor
+// hexadecimal correspondente na cena.
 const COLORS_BY_STICKER = {
   white: COLORS.U,
   yellow: COLORS.D,
@@ -21,6 +25,10 @@ const COLORS_BY_STICKER = {
   orange: COLORS.L,
 };
 
+// Cuida de tudo que é Three.js: cena, câmera, malhas dos cubinhos,
+// gestos de arrastar (mouse/toque) e as animações de giro. Não guarda
+// estado de jogo — isso é responsabilidade do RubiksCube, que é sempre
+// a fonte da verdade; esta classe só espelha esse estado visualmente.
 export class CubeRenderer {
   constructor(container, cube) {
     this.container = container;
@@ -80,12 +88,12 @@ export class CubeRenderer {
     this.draggedFace = null;
     this.draggedPoint = null;
     this.isDraggingCube = false;
-    this.idleMotion = true;
-    this.autoRotationEnabled = true;
+    this.idleMotion = true; // rotação suave quando ninguém interage
+    this.autoRotationEnabled = true; // preferência do usuário (botão auto-rotação)
     this.motionTime = 0;
-    this.moveEffect = 0;
+    this.moveEffect = 0; // força do "solavanco" visual após um giro
     this.isAnimatingMove = false;
-    this.moveQueue = [];
+    this.moveQueue = []; // fila de movimentos pendentes (teclado/gestos/embaralhar)
 
     this._setupLights();
     this._createCube();
@@ -116,6 +124,8 @@ export class CubeRenderer {
     this.scene.add(directionalLight);
   }
 
+  // Cria uma malha para cada cubinho do estado lógico e monta o grupo
+  // que representa o cubo inteiro na cena.
   _createCube() {
     const cubies = this.cube.getCubies();
 
@@ -134,6 +144,13 @@ export class CubeRenderer {
     }
   }
 
+  // Constrói a malha de um cubinho individual. O box tem cantos
+  // arredondados (RoundedBoxGeometry) para imitar o acabamento de um
+  // cubo mágico físico, e usa 0.91 de lado — um pouco menor que 1 — para
+  // deixar uma folga visível entre os cubinhos vizinhos.
+  //
+  // A ordem dos materiais no array segue a convenção do BoxGeometry do
+  // Three.js: +X, -X, +Y, -Y, +Z, -Z.
   _createCubie(cubie) {
     const geometry = new RoundedBoxGeometry(
       0.91,
@@ -187,6 +204,9 @@ export class CubeRenderer {
     );
   }
 
+  // Faces sem sticker (miolo do cubo) caem no fallbackColor, que
+  // normalmente é COLORS.INNER — exceto quando quem chama já sabe que
+  // aquela face deveria ter uma cor de face (ver _updateCubieMaterials).
   _materialForSticker(sticker, fallbackColor) {
     return new THREE.MeshStandardMaterial({
       color: sticker ? this._colorFromSticker(sticker, fallbackColor) : COLORS.INNER,
@@ -200,6 +220,14 @@ export class CubeRenderer {
     return COLORS_BY_STICKER[sticker] ?? fallbackColor;
   }
 
+  // Registra os handlers de ponteiro (mouse e toque no mesmo listener,
+  // já que a Pointer Events API unifica os dois).
+  //
+  // O primeiro listener roda em fase de captura e decide, antes de
+  // qualquer outra coisa, se o gesto deve orbitar a câmera ou tentar
+  // girar uma camada: no toque, arrastar uma peça sempre gira o cubo; no
+  // mouse é preciso segurar Shift, porque o botão esquerdo sozinho já é
+  // usado para orbitar a câmera livremente.
   _setupPointerEvents() {
     const canvas = this.renderer.domElement;
 
@@ -259,6 +287,9 @@ export class CubeRenderer {
     );
   }
 
+  // Início do gesto de arraste. Se não for um gesto de face (mouse sem
+  // Shift, ou toque fora de qualquer cubinho), deixa a órbita da câmera
+  // assumir o controle e sai cedo.
   _onPointerDown(event) {
     if (this.isAnimatingMove) {
       return;
@@ -300,6 +331,9 @@ export class CubeRenderer {
     } catch {}
   }
 
+  // Converte a posição do ponteiro na tela em coordenadas normalizadas
+  // (-1 a 1) e faz o raycasting contra os cubinhos, devolvendo a
+  // primeira interseção (a mais próxima da câmera) ou null.
   _intersectionAt(event) {
     const rect = this.renderer.domElement.getBoundingClientRect();
 
@@ -314,6 +348,11 @@ export class CubeRenderer {
     return this.raycaster.intersectObjects(this.cubeGroup.children)[0] ?? null;
   }
 
+  // Só dispara o movimento quando o arraste passa de um limiar mínimo
+  // (25px), para não confundir um toque/clique acidental com um gesto de
+  // giro. Assim que o movimento é disparado, o arraste é encerrado — não
+  // dá pra "corrigir" o giro no meio do gesto, só soltar e arrastar de
+  // novo.
   _onPointerMove(event) {
     if (!this.isDraggingCube || !this.dragStart) {
       return;
@@ -351,6 +390,10 @@ export class CubeRenderer {
     this.idleMotion = this.autoRotationEnabled;
   }
 
+  // Traduz um arraste 2D na tela em um movimento de camada 3D: descobre
+  // qual eixo o cubinho arrastado pertence a partir da face clicada,
+  // escolhe entre os outros dois eixos qual mais se alinha com a
+  // direção do arraste, e por fim decide o sentido do giro.
   _performCubeMove(dx, dy) {
     if (!this.draggedCubie) {
       return;
@@ -385,6 +428,9 @@ export class CubeRenderer {
     this.requestMove(move);
   }
 
+  // Identifica a qual eixo do mundo a normal da face clicada é mais
+  // próxima (a normal de uma face plana do cubinho é sempre quase
+  // paralela a um dos três eixos).
   _axisFromVector(vector) {
     const abs = [Math.abs(vector.x), Math.abs(vector.y), Math.abs(vector.z)];
 
@@ -395,6 +441,9 @@ export class CubeRenderer {
         : 'z';
   }
 
+  // Dos dois eixos que não são a normal da face clicada, escolhe o que
+  // tem a tangente na tela mais alinhada com a direção do arraste — ou
+  // seja, o eixo que o gesto "quis" girar.
   _axisForSwipe(faceAxis, dx, dy) {
     const candidates = ['x', 'y', 'z'].filter((axis) => axis !== faceAxis);
 
@@ -405,6 +454,9 @@ export class CubeRenderer {
     }, candidates[0] ?? faceAxis ?? 'z');
   }
 
+  // Compara a direção do arraste na tela com a tangente projetada do
+  // eixo de giro no ponto tocado, para decidir se o giro é no sentido
+  // positivo ou negativo daquele eixo.
   _rotationDirectionFromSwipe(axis, dx, dy) {
     const axisVector = new THREE.Vector3(
       axis === 'x' ? 1 : 0,
@@ -428,6 +480,11 @@ export class CubeRenderer {
     return dot >= 0 ? 1 : -1;
   }
 
+  // Projeta na tela um pequeno deslocamento ao longo do eixo tangente
+  // (perpendicular ao eixo de giro e ao raio câmera-ponto), para saber
+  // em que direção 2D esse eixo "aparece" do ponto de vista atual da
+  // câmera. É essa tangente que _axisForSwipe e _rotationDirectionFromSwipe
+  // comparam com o vetor do arraste do usuário.
   _screenTangent(axis) {
     const axisVector = new THREE.Vector3(
       axis === 'x' ? 1 : 0,
@@ -452,6 +509,8 @@ export class CubeRenderer {
     };
   }
 
+  // Limpa o estado de arraste e devolve o controle da câmera para a
+  // órbita normal.
   _cancelDrag() {
     this.dragStart = null;
     this.isDraggingCube = false;
@@ -483,6 +542,11 @@ export class CubeRenderer {
     );
   }
 
+  // Loop de renderização. Além de desenhar a cena a cada frame, cuida de
+  // dois efeitos puramente visuais que não fazem parte do estado do
+  // cubo: o balanço ambiente (idleMotion) e o "solavanco" de escala que
+  // dá um feedback tátil logo depois de um giro (moveEffect, que decai
+  // exponencialmente a cada frame até sumir).
   _animate() {
     requestAnimationFrame(() => {
       this._animate();
@@ -512,6 +576,9 @@ export class CubeRenderer {
     );
   }
 
+  // Sincroniza as malhas existentes com o estado atual do RubiksCube
+  // (posição e cores), sem recriar geometria. Usado depois de undo,
+  // limpar e no fim de cada giro animado.
   _updateCube() {
     const cubies =
       this.cube.getCubies();
@@ -540,10 +607,19 @@ export class CubeRenderer {
     }
   }
 
+  // Decide se um gesto de ponteiro deve tentar girar uma camada (em vez
+  // de orbitar a câmera): sempre no toque, e no mouse só com Shift
+  // pressionado — veja o painel de comandos na UI, que documenta essa
+  // mesma regra para o usuário.
   _usesFaceGesture(event) {
     return event.pointerType === 'touch' || event.shiftKey;
   }
 
+  // Atualiza a cor de cada face do cubinho a partir do sticker atual.
+  // fallbackColors recalcula, pela posição, se aquela face deveria ser
+  // uma cor de face (caso o cubinho tenha girado para a borda) ou
+  // permanecer grafite — isso evita ter que reconstruir a geometria a
+  // cada movimento.
   _updateCubieMaterials(mesh, cubie) {
     const stickers = [
       cubie.stickers.right,
@@ -573,6 +649,14 @@ export class CubeRenderer {
     }
   }
 
+  // Anima um giro de camada de verdade: agrupa temporariamente os
+  // cubinhos daquela camada num pivô, gira o pivô com easing até o
+  // ângulo final e, ao terminar, devolve cada cubinho ao grupo principal
+  // do cubo. A rotação acumulada no pivô é descartada (quaternion
+  // resetado) porque _updateCube(), logo em seguida, já reposiciona cada
+  // malha a partir do novo estado lógico do RubiksCube — a peça
+  // "aterrissa" na posição correta em vez de manter a rotação visual do
+  // giro.
   animateMove(move) {
     if (this.isAnimatingMove) {
       return;
@@ -631,11 +715,18 @@ export class CubeRenderer {
     requestAnimationFrame(step);
   }
 
+  // Ponto de entrada usado por teclado, gestos e pelo botão de
+  // embaralhar: só enfileira o movimento, nunca aplica na hora, porque
+  // só um giro pode ser animado por vez.
   requestMove(move, record = true) {
     this.moveQueue.push({ move: { ...move }, record });
     this._processMoveQueue();
   }
 
+  // Consome a fila de movimentos um de cada vez. Aplica o movimento no
+  // estado lógico primeiro e só então dispara a animação correspondente
+  // — quando a animação termina, ela mesma chama _processMoveQueue de
+  // novo para seguir para o próximo movimento da fila.
   _processMoveQueue() {
     if (this.isAnimatingMove || this.moveQueue.length === 0) {
       if (!this.isAnimatingMove && this.moveQueue.length === 0) {
@@ -654,6 +745,10 @@ export class CubeRenderer {
     this.moveEffect = 1;
   }
 
+  // Distância da câmera até a origem, ajustada pelo tamanho do cubo
+  // (cubos maiores precisam de mais distância para caber no enquadramento)
+  // e pela largura da viewport (em telas estreitas afasta ainda mais a
+  // câmera para compensar o espaço menor).
   _cameraDistance(width = this.container.clientWidth) {
     const sizeFactor = this.cube.size === 3 ? 1 : this.cube.size === 4 ? 1.28 : 1.52;
     const mobileFactor = width <= 560
@@ -666,6 +761,9 @@ export class CubeRenderer {
     return 6 * sizeFactor * mobileFactor;
   }
 
+  // Descarta as malhas atuais (liberando geometria e materiais da GPU) e
+  // recria o cubo do zero a partir do tamanho novo do RubiksCube. Usado
+  // quando o usuário troca o seletor de tamanho.
   rebuildCube() {
     for (const mesh of this.cubeGroup.children) {
       mesh.geometry.dispose();

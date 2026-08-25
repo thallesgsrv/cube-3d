@@ -1,5 +1,9 @@
 import { Timer } from './Timer.js';
 
+// Monta o HUD e os controles (timer, contador de movimentos, seletor de
+// tamanho, embaralhar/desfazer/limpar, auto-rotação) e liga tudo aos
+// métodos do RubiksCube e do CubeRenderer. É a única classe que toca no
+// DOM fora da cena 3D.
 export class UI {
 	constructor(container, cube, renderer) {
 		this.cube = cube;
@@ -13,6 +17,8 @@ export class UI {
 		this._bind();
 	}
 
+	// Injeta o HTML da UI de uma vez e guarda referências aos elementos
+	// que precisam ser atualizados depois (tempo, contador, status etc.).
 	_render(container) {
 		container.insertAdjacentHTML('beforeend', `
 			<section class="cube-ui" aria-label="Controles do cubo mágico">
@@ -36,16 +42,47 @@ export class UI {
 		this.sizeButtons = [...container.querySelectorAll('.size-btn')];
 	}
 
+	// Liga cada controle do HUD ao seu efeito no cubo/renderizador/timer.
+	// Mantido como um handler por linha para ficar fácil comparar cada
+	// botão com o que ele faz.
 	_bind() {
+		// Contador de movimentos e status "pronto/em curso" acompanham
+		// qualquer giro concluído, venha de teclado, gesto ou embaralhar.
 		this.renderer.onMove = () => this.refresh();
+
+		// Só mostra o toast de "resolvido" se a sessão foi iniciada pelo
+		// usuário — resolver o cubo sem ter apertado "começar" não conta.
 		this.renderer.onSolved = () => { if (!this.sessionStarted) return; this.toast.querySelector('.solved-toast__time').textContent = this.time.textContent; this.toast.classList.add('is-visible'); };
+
+		// Embaralhar: 20 giros aleatórios (eixo e camada alternando),
+		// enviados com record = false para não entrarem no histórico de
+		// desfazer nem no contador de movimentos da sessão.
 		document.querySelector('.js-scramble').addEventListener('click', () => { if (this.renderer.isAnimatingMove || this.renderer.moveQueue.length > 0) return; this.toast.classList.remove('is-visible'); const axes = ['x', 'y', 'z']; const layers = [-(this.cube.size - 1) / 2, (this.cube.size - 1) / 2]; for (let i = 0; i < 20; i += 1) this.renderer.requestMove({ axis: axes[i % 3], layerValue: layers[i % 2], dir: i % 2 ? -1 : 1 }, false); });
+
+		// Desfazer: reverte o último movimento do histórico do cubo e
+		// anima a rotação inversa correspondente.
 		document.querySelector('.js-undo').addEventListener('click', () => { const move = this.cube.undo(); if (move) { this.renderer.animateMove({ ...move, dir: -move.dir }); this.refresh(); } });
+
+		// Limpar: volta ao estado resolvido e reinicia a sessão (timer,
+		// rótulo do botão "começar" e o toast de resolvido).
 		document.querySelector('.js-reset').addEventListener('click', () => { this.cube.reset(); this.renderer._updateCube(); this.renderer._triggerMoveEffect(); this.timer.reset(); this.sessionStarted = false; this.startLabel.textContent = 'começar'; this.startButton.classList.remove('is-started'); this.toast.classList.remove('is-visible'); this.refresh(); });
+
+		// Auto-rotação: alterna o balanço ambiente do cubo quando ele
+		// está parado.
 		this.motionToggle.addEventListener('click', () => { this.renderer.autoRotationEnabled = !this.renderer.autoRotationEnabled; this.renderer.idleMotion = this.renderer.autoRotationEnabled; this.motionToggle.classList.toggle('is-active', this.renderer.autoRotationEnabled); });
+
+		// Começar/pausar/continuar: um único botão alterna o cronômetro e
+		// troca o próprio rótulo conforme o estado.
 		this.startButton.addEventListener('click', () => { if (this.timer.isRunning()) { this.timer.stop(); this.startLabel.textContent = 'continuar'; this.startButton.classList.remove('is-started'); } else { this.sessionStarted = true; this.timer.start(); this.startLabel.textContent = 'pausar'; this.toast.classList.remove('is-visible'); this.startButton.classList.add('is-started'); } });
+
+		// Seletor de tamanho: troca o tamanho do cubo lógico, reconstrói a
+		// malha 3D e reinicia a sessão, só quando não há giro em andamento
+		// ou na fila (evita reconstruir o cubo no meio de uma animação).
 		this.sizeButtons.forEach((button) => button.addEventListener('click', () => { const size = Number(button.dataset.size); if (size === this.cube.size || this.renderer.isAnimatingMove || this.renderer.moveQueue.length > 0) return; this.cube.setSize(size); this.renderer.rebuildCube(); this.timer.reset(); this.sessionStarted = false; this.startLabel.textContent = 'começar'; this.startButton.classList.remove('is-started'); this.toast.classList.remove('is-visible'); this.sizeButtons.forEach((item) => item.classList.toggle('is-active', item === button)); this.refresh(); }));
 	}
 
+	// Redesenha o contador de movimentos, o status e o estado do botão
+	// desfazer a partir do cubo lógico — chamado depois de qualquer ação
+	// que possa mudar esses três valores.
 	refresh() { this.moves.textContent = String(this.cube.moveHistory.length).padStart(2, '0'); this.status.innerHTML = `<i></i> ${this.cube.isSolved() ? 'pronto' : 'em curso'}`; this.undoButton.disabled = this.cube.moveHistory.length === 0; }
 }

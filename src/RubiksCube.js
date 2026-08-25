@@ -1,3 +1,4 @@
+// Convenção de cores das faces (padrão ocidental, oposto U/D, F/B, R/L)
 const COLORS = {
   U: 'white',
   D: 'yellow',
@@ -9,6 +10,8 @@ const COLORS = {
 
 const AXES = ['x', 'y', 'z'];
 
+// Representa o estado lógico do cubo (posições e stickers dos cubinhos),
+// independente de qualquer renderização. A cena 3D só lê esse estado.
 export class RubiksCube {
   constructor(size = 3) {
     if (!Number.isInteger(size) || size < 2) {
@@ -22,6 +25,10 @@ export class RubiksCube {
     this._createSolvedState();
   }
 
+  // Monta os cubinhos em uma grade centrada na origem, com coordenadas
+  // inteiras ou meio-inteiras (ex.: -1, 0, 1 num cubo 3x3). Cada cubinho
+  // só recebe um sticker na face que fica voltada para fora; as faces
+  // internas ficam sem sticker e usam a cor grafite na renderização.
   _createSolvedState() {
     this.cubies = [];
 
@@ -89,6 +96,9 @@ export class RubiksCube {
     this.reset();
   }
 
+  // Retorna uma cópia defensiva dos cubinhos, para que quem consome
+  // (o renderizador, por exemplo) não consiga alterar o estado interno
+  // diretamente.
   getCubies() {
     return this.cubies.map((cubie) => ({
       id: cubie.id,
@@ -107,6 +117,10 @@ export class RubiksCube {
     return this._stickersAreSolved();
   }
 
+  // O cubo está resolvido quando cada sticker de face externa corresponde
+  // à cor daquela face (não basta checar se os stickers "casam" entre si,
+  // porque um cubo pode estar girado como um todo e ainda ter as faces
+  // consistentes entre si sem estar na orientação resolvida).
   _stickersAreSolved() {
     const max = this._maxCoordinate();
     const min = this._minCoordinate();
@@ -169,6 +183,10 @@ export class RubiksCube {
     return -(this.size - 1) / 2;
   }
 
+  // Aplica um movimento ao estado do cubo. `record` controla se o
+  // movimento entra no histórico (usado para desfazer) — o embaralhamento
+  // usa record = false justamente para não poder ser desfeito peça por
+  // peça e não contar no contador de movimentos da sessão.
   applyMove(move, record = true) {
     this._validateMove(move);
 
@@ -200,6 +218,9 @@ export class RubiksCube {
     }
   }
 
+  // Gira 90° apenas os cubinhos cuja coordenada, no eixo escolhido, bate
+  // com a camada informada. O arredondamento evita falhas de ponto
+  // flutuante depois de várias rotações acumuladas.
   rotateLayer90(axis, layerValue, dir = 1) {
     const coordinate =
       this._coordinateForLayer(
@@ -229,6 +250,10 @@ export class RubiksCube {
     }
   }
 
+  // Valida o eixo e devolve a coordenada da camada. Existe como método
+  // separado para manter rotateLayer90 legível e para servir de ponto
+  // único de validação caso o cálculo da camada fique mais elaborado no
+  // futuro (ex.: suporte a notação de camadas por nome).
   _coordinateForLayer(axis, layerValue) {
     if (!AXES.includes(axis)) {
       throw new Error(
@@ -239,6 +264,11 @@ export class RubiksCube {
     return layerValue;
   }
 
+  // Rotaciona a posição do cubinho em torno do eixo dado, 90° na direção
+  // `dir` (1 = sentido anti-horário olhando do lado positivo do eixo,
+  // -1 = sentido contrário). É a mesma matriz de rotação de 90° aplicada
+  // manualmente para os três eixos, trocando e invertendo os dois
+  // componentes que não são o eixo de giro.
   _rotatePosition(cubie, axis, dir) {
     const { x, y, z } = cubie.position;
 
@@ -260,6 +290,11 @@ export class RubiksCube {
     }
   }
 
+  // Remapeia os stickers do cubinho de acordo com o giro, seguindo o
+  // ciclo das quatro faces perpendiculares ao eixo (as duas faces
+  // paralelas ao eixo de giro não mudam). Cada bloco `if` só copia o
+  // sticker se ele existir, porque cubinhos internos/de borda não têm
+  // sticker em todas as seis faces.
   _rotateStickers(cubie, axis, dir) {
     const old = {
       ...cubie.stickers,
@@ -410,6 +445,8 @@ export class RubiksCube {
     }
   }
 
+  // Desfaz o último movimento registrado, aplicando-o de novo na direção
+  // oposta, e move esse movimento para a pilha de refazer.
   undo() {
     if (this.moveHistory.length === 0) {
       return null;
@@ -439,6 +476,9 @@ export class RubiksCube {
     return move;
   }
 
+  // Refaz o último movimento desfeito. Qualquer novo movimento aplicado
+  // via applyMove esvazia essa pilha (ver applyMove), então redo só
+  // funciona logo depois de um undo.
   redo() {
     if (this.redoStack.length === 0) {
       return null;
@@ -463,6 +503,9 @@ export class RubiksCube {
     return move;
   }
 
+  // Garante que um movimento tem forma válida antes de mexer no estado.
+  // Falhar cedo aqui evita cubinhos "perdidos" por um eixo ou camada
+  // inválidos passarem despercebidos pelo filtro de rotateLayer90.
   _validateMove(move) {
     if (!move || typeof move !== 'object') {
       throw new Error('Invalid move');

@@ -1,9 +1,12 @@
+// Cronômetro da sessão. Usa performance.now() e requestAnimationFrame em
+// vez de setInterval para não perder precisão quando a aba fica em
+// segundo plano ou o navegador atrasa o timer.
 export class Timer {
   constructor(onTick) {
     this.onTick = onTick;
 
-    this._startedAt = null;
-    this._elapsed = 0;
+    this._startedAt = null; // marca de tempo em que a contagem atual começou
+    this._elapsed = 0; // tempo acumulado enquanto o timer estava pausado
     this._raf = null;
     this._running = false;
   }
@@ -19,6 +22,8 @@ export class Timer {
     this._loop();
   }
 
+  // Pausa o cronômetro, guardando o tempo já decorrido para que um
+  // start() posterior continue de onde parou em vez de zerar.
   stop() {
     if (!this._running) {
       return;
@@ -76,6 +81,8 @@ export class Timer {
     this.onTick?.(ms, Timer.format(ms));
   }
 
+  // Formata milissegundos como mm:ss.cc (centésimos), do jeito que
+  // aparece no HUD.
   static format(ms) {
     const totalCentis = Math.floor(ms / 10);
     const centis = totalCentis % 100;
