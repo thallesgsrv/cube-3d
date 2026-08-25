@@ -40,11 +40,12 @@ O comando `preview` serve o conteúdo compilado localmente para uma verificaçã
 
 ### Movimentos
 
-- Arraste uma peça com o mouse ou toque para girar a camada correspondente.
+- No toque, arraste uma peça para girar a camada correspondente.
+- No mouse, segure `Shift` e arraste uma peça para girar a camada; sem `Shift`, o arraste orbita a câmera.
 - Em cubos maiores, arraste as peças centrais para movimentar as camadas internas.
-- Arraste uma área vazia para orbitar a câmera.
+- Arraste uma área vazia (ou o mouse sem `Shift`) para orbitar a câmera.
 - Use `R`, `L`, `U`, `D`, `F` e `B` para movimentar as faces pelo teclado.
-- Use `Shift` para inverter o sentido do movimento.
+- Use `Shift` junto com essas teclas para inverter o sentido do movimento.
 - Use `Ctrl` ou `Cmd` para executar um giro de 180 graus.
 
 Os movimentos são enfileirados e executados em sequência para preservar a animação e o estado do cubo mesmo quando várias ações são feitas rapidamente.
